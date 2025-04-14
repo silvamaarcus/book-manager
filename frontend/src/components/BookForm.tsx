@@ -12,6 +12,7 @@ import {
   FormMessage,
 } from "./ui/form";
 import { Input } from "./ui/input";
+import { useState } from "react";
 
 // Schema de validação com Zod
 const formSchema = z.object({
@@ -26,7 +27,11 @@ const formSchema = z.object({
     .regex(/^\d+(\.\d{2})?$/, { message: "Insira um preço válido (ex: 5.90)" }),
 });
 
-export const UseForm = () => {
+export const BookForm = () => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -38,8 +43,39 @@ export const UseForm = () => {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     console.log(values);
+
+    setIsSubmitting(true);
+    setSubmitError(null);
+    setSubmitSuccess(false);
+
+    try {
+      const response = await fetch("http://localhost:3000/books", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(values),
+      });
+
+      if (response.ok && response.status === 201) {
+        console.log("Livro adicionado com sucesso!");
+        form.reset();
+        setSubmitSuccess(true);
+      } else {
+        const errorData = await response.json();
+        console.error("Erro ao adicionar livro:", errorData);
+        setSubmitError(
+          errorData?.error || "Erro desconhecido ao adicionar o livro."
+        );
+      }
+    } catch (error) {
+      console.error("Erro na requisição:", error);
+      setSubmitError("Erro ao comunicar com o servidor.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -115,9 +151,19 @@ export const UseForm = () => {
           )}
         />
 
-        <Button type="submit" className="cursor-pointer">
-          Enviar
+        <Button
+          type="submit"
+          className="cursor-pointer"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? "Adicionando..." : "Adicionar"}
         </Button>
+
+        {submitSuccess && (
+          <div className="text-green-500">Livro adicionado com sucesso!</div>
+        )}
+
+        {submitError && <div className="text-red-500">Erro: {submitError}</div>}
       </form>
     </Form>
   );
