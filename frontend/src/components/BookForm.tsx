@@ -1,6 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { useEffect, useState } from "react";
 
 import { Button } from "./ui/button";
 import {
@@ -12,7 +13,7 @@ import {
   FormMessage,
 } from "./ui/form";
 import { Input } from "./ui/input";
-import { useState } from "react";
+import { Book } from "@/types/Book";
 
 // Schema de validação com Zod
 const formSchema = z.object({
@@ -27,14 +28,23 @@ const formSchema = z.object({
     .regex(/^\d+(\.\d{2})?$/, { message: "Insira um preço válido (ex: 5.90)" }),
 });
 
-export const BookForm = () => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
+interface BookFormProps {
+  onSubmit: (book: Book) => void;
+  initialData?: Book;
+  isEditing?: boolean;
+}
+
+export const BookForm = ({
+  onSubmit,
+  initialData,
+  isEditing,
+}: BookFormProps) => {
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
+    defaultValues: initialData || {
       title: "",
       author: "",
       gender: "",
@@ -43,46 +53,36 @@ export const BookForm = () => {
     },
   });
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
+  const {
+    handleSubmit,
+    control,
+    reset,
+    formState: { isSubmitting },
+  } = form;
 
-    setIsSubmitting(true);
-    setSubmitError(null);
-    setSubmitSuccess(false);
-
-    try {
-      const response = await fetch("http://localhost:3000/books", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(values),
-      });
-
-      if (response.ok && response.status === 201) {
-        console.log("Livro adicionado com sucesso!");
-        form.reset();
-        setSubmitSuccess(true);
-      } else {
-        const errorData = await response.json();
-        console.error("Erro ao adicionar livro:", errorData);
-        setSubmitError(
-          errorData?.error || "Erro desconhecido ao adicionar o livro."
-        );
-      }
-    } catch (error) {
-      console.error("Erro na requisição:", error);
-      setSubmitError("Erro ao comunicar com o servidor.");
-    } finally {
-      setIsSubmitting(false);
+  useEffect(() => {
+    if (initialData) {
+      reset(initialData);
     }
-  }
+  }, [initialData, reset]);
+
+  const handleFormSubmit = async (data: z.infer<typeof formSchema>) => {
+    try {
+      await onSubmit({ ...data, id: initialData?.id || "" });
+      setSubmitSuccess(true);
+      setSubmitError("");
+      reset(); // limpa o formulário
+    } catch (error) {
+      setSubmitError(error as string);
+      setSubmitSuccess(false);
+    }
+  };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-8">
         <FormField
-          control={form.control}
+          control={control}
           name="title"
           render={({ field }) => (
             <FormItem>
@@ -96,7 +96,7 @@ export const BookForm = () => {
         />
 
         <FormField
-          control={form.control}
+          control={control}
           name="author"
           render={({ field }) => (
             <FormItem>
@@ -110,7 +110,7 @@ export const BookForm = () => {
         />
 
         <FormField
-          control={form.control}
+          control={control}
           name="gender"
           render={({ field }) => (
             <FormItem>
@@ -124,7 +124,7 @@ export const BookForm = () => {
         />
 
         <FormField
-          control={form.control}
+          control={control}
           name="year"
           render={({ field }) => (
             <FormItem>
@@ -138,7 +138,7 @@ export const BookForm = () => {
         />
 
         <FormField
-          control={form.control}
+          control={control}
           name="price"
           render={({ field }) => (
             <FormItem>
@@ -156,13 +156,12 @@ export const BookForm = () => {
           className="cursor-pointer"
           disabled={isSubmitting}
         >
-          {isSubmitting ? "Adicionando..." : "Adicionar"}
+          {isSubmitting ? "Salvando..." : isEditing ? "Salvar" : "Adicionar"}
         </Button>
 
         {submitSuccess && (
-          <div className="text-green-500">Livro adicionado com sucesso!</div>
+          <div className="text-green-500">Livro salvo com sucesso!</div>
         )}
-
         {submitError && <div className="text-red-500">Erro: {submitError}</div>}
       </form>
     </Form>

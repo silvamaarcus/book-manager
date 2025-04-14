@@ -43,7 +43,7 @@ export const BookList = ({ books, onEdit, onDelete }: BookListProps) => {
               <TableCell>{book.author}</TableCell>
               <TableCell>{book.year}</TableCell>
               <TableCell>{book.gender}</TableCell>
-              <TableCell>{book.price}</TableCell>
+              <TableCell>R$ {book.price}</TableCell>
               <TableCell>
                 <div className="flex gap-2">
                   <button
