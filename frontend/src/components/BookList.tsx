@@ -19,8 +19,8 @@ interface BookListProps {
 
 export const BookList = ({ books, onEdit, onDelete }: BookListProps) => {
   return (
-    <>
-      <Table>
+    <section className="overflow-x-auto">
+      <Table className="min-w-full">
         <TableCaption>Lista atualizada.</TableCaption>
 
         <TableHeader>
@@ -64,6 +64,6 @@ export const BookList = ({ books, onEdit, onDelete }: BookListProps) => {
           ))}
         </TableBody>
       </Table>
-    </>
+    </section>
   );
 };
