@@ -41,21 +41,40 @@ app.post("/books", async (req, res) => {
 // GET /livros - Listar todos os livros
 app.get("/books", async (req, res) => {
   try {
-    const { author, gender } = req.query; // Captura os parâmetros de consulta
+    const { author, gender, sort, order, limit } = req.query; // Captura os parâmetros de consulta
     const where = {}; // Objeto de filtro
 
     // Adiciona filtros dinâmicos com base nos parâmetros de consulta
     if (author) {
-      where.autor = { contains: author, mode: "insensitive" }; // Filtragem por autor
+      where.author = { contains: author, mode: "insensitive" }; // Filtragem por autor
     }
     if (gender) {
-      where.genero = { equals: gender, mode: "insensitive" }; // Filtragem por gênero
+      where.gender = { equals: gender, mode: "insensitive" }; // Filtragem por gênero
     }
 
-    // Busca os livros com base nos filtros
-    const books = await prisma.book.findMany({
+    // Configuração de ordenação
+    const orderBy = [];
+    if (sort) {
+      // Adiciona ordenação com base no parâmetro 'sort'
+      // 'order' pode ser 'asc' ou 'desc'
+      orderBy.push({
+        [sort]: order === "desc" ? "desc" : "asc",
+      });
+    } else {
+      // Ordenação padrão por ID decrescente (mais recentes primeiro)
+      orderBy.push({ id: "desc" });
+    }
+
+    // Busca os livros com base nos filtros e ordenação
+    let books = await prisma.book.findMany({
       where,
+      orderBy,
     });
+
+    // Aplica o limite se fornecido
+    if (limit && !isNaN(parseInt(limit))) {
+      books = books.slice(0, parseInt(limit));
+    }
 
     // Retorna os livros encontrados
     res.json(books);
