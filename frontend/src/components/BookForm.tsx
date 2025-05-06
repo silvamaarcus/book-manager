@@ -1,9 +1,13 @@
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { useEffect, useState } from "react";
-
+import { BookPlus } from "lucide-react";
+import { Card, CardHeader, CardTitle, CardDescription } from "./ui/card";
+import { Input } from "./ui/input";
+import { toast, Toaster } from "sonner";
 import { Button } from "./ui/button";
+import { z } from "zod";
+import { Book } from "@/types/Book";
+import { useEffect} from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Form,
   FormControl,
@@ -12,20 +16,18 @@ import {
   FormLabel,
   FormMessage,
 } from "./ui/form";
-import { Input } from "./ui/input";
-import { Book } from "@/types/Book";
 
 // Schema de validação com Zod
 const formSchema = z.object({
-  title: z.string().min(2, { message: "Insira o nome do livro!" }),
-  author: z.string().min(2, { message: "Insira o nome do autor!" }),
-  gender: z.string().min(2, { message: "Insira o gênero!" }),
+  title: z.string().min(2, { message: "Enter book title" }),
+  author: z.string().min(2, { message: "Enter author name" }),
+  gender: z.string().min(2, { message: "Enter book gender" }),
   year: z
     .string()
-    .regex(/^\d{4}$/, { message: "Insira um ano válido (ex: 2023)" }),
+    .regex(/^\d{4}$/, { message: "Enter a valid year (ex: 2023)" }),
   price: z
     .string()
-    .regex(/^\d+(\.\d{2})?$/, { message: "Insira um preço válido (ex: 5.90)" }),
+    .regex(/^\d+(\.\d{2})?$/, { message: "Enter a valid price (ex: 5.90)" }),
 });
 
 interface BookFormProps {
@@ -39,9 +41,6 @@ export const BookForm = ({
   initialData,
   isEditing,
 }: BookFormProps) => {
-  const [submitSuccess, setSubmitSuccess] = useState(false);
-  const [submitError, setSubmitError] = useState("");
-
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: initialData || {
@@ -69,101 +68,144 @@ export const BookForm = ({
   const handleFormSubmit = async (data: z.infer<typeof formSchema>) => {
     try {
       await onSubmit({ ...data, id: initialData?.id || "" });
-      setSubmitSuccess(true);
-      setSubmitError("");
+
+      toast("This book has been successfully saved!", {
+        duration: 6000,
+        icon: "👏",
+        closeButton: true,
+        style: {
+          background: "var(--background)",
+          color: "var(--sucess)",
+          border: "1px solid var(--sucess)",
+        },
+      });
+
       reset(); // limpa o formulário
     } catch (error) {
-      setSubmitError(error as string);
-      setSubmitSuccess(false);
+      console.error(error);
     }
   };
 
   return (
-    <Form {...form}>
-      <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-8">
-        <FormField
-          control={control}
-          name="title"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Nome do Livro</FormLabel>
-              <FormControl>
-                <Input placeholder="Nome do livro..." {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+    <>
+      <Card className="w-full glass-card animate-fade-up p-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BookPlus className="h-5 w-5 text-primary" />
+            Add New Book
+          </CardTitle>
+          <CardDescription>
+            Register a new book to your library collection
+          </CardDescription>
+        </CardHeader>
 
-        <FormField
-          control={control}
-          name="author"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Autor</FormLabel>
-              <FormControl>
-                <Input placeholder="Nome do autor..." {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <Form {...form}>
+          <form
+            onSubmit={handleSubmit(handleFormSubmit)}
+            className="space-y-8 px-6"
+          >
+            <FormField
+              control={control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Book Title</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Enter book title"
+                      {...field}
+                      className="bg-background/50"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-        <FormField
-          control={control}
-          name="gender"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Gênero</FormLabel>
-              <FormControl>
-                <Input placeholder="Defina o gênero..." {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+            <FormField
+              control={control}
+              name="author"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Author</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Enter author name"
+                      {...field}
+                      className="bg-background/50"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-        <FormField
-          control={control}
-          name="year"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Ano</FormLabel>
-              <FormControl>
-                <Input placeholder="Ano de publicação..." {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+            <FormField
+              control={control}
+              name="gender"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Genre</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Enter genre"
+                      {...field}
+                      className="bg-background/50"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-        <FormField
-          control={control}
-          name="price"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Preço</FormLabel>
-              <FormControl>
-                <Input placeholder="Ex: 5.90" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+            <FormField
+              control={control}
+              name="year"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Year</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Enter year"
+                      {...field}
+                      className="bg-background/50"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-        <Button
-          type="submit"
-          className="cursor-pointer"
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? "Salvando..." : isEditing ? "Salvar" : "Adicionar"}
-        </Button>
+            <FormField
+              control={control}
+              name="price"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Price</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Ex: 5.90"
+                      {...field}
+                      className="bg-background/50"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-        {submitSuccess && (
-          <div className="text-green-500">Livro salvo com sucesso!</div>
-        )}
-        {submitError && <div className="text-red-500">Erro: {submitError}</div>}
-      </form>
-    </Form>
+            <Button
+              type="submit"
+              className="cursor-pointer"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Saving..." : isEditing ? "Save" : "Add Book"}
+            </Button>
+
+            <Toaster />
+          </form>
+        </Form>
+      </Card>
+    </>
   );
 };
